@@ -1,0 +1,7 @@
+Summary:
+	* Server --> create ChatServer
+	* ChatServerStart() --> accept clients
+	
+	* Socket:
+		Get inputStream
+		Get outputStream
