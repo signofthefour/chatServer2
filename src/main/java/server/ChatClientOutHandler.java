@@ -1,9 +1,9 @@
 package server;
 
+import protocol.Message;
+
 import java.io.IOException;
 import java.io.OutputStream;
-
-import protocol.Message;
 
 public class ChatClientOutHandler implements Runnable {
 	
@@ -24,7 +24,13 @@ public class ChatClientOutHandler implements Runnable {
 			if (client.hasException()) break;
 			if (client.chatOut.getOutMessage().good()) {
 				try {
-					outputStream.write(client.chatOut.getOutMessage().toText().getBytes());
+					if (client.chatOut.getOutMessage().getCommand().equals("FILE")) {
+						outputStream.write(client.chatOut.getOutMessage().toByte());
+						System.out.println("File");
+					}
+					else {
+						outputStream.write(client.chatOut.getOutMessage().toText().getBytes());
+					}
 					this.client.chatOut.clear();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block

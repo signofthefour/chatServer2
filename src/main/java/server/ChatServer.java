@@ -1,12 +1,13 @@
 package server;
 
-import java.io.*;
-import java.net.*;
+import protocol.Message;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
-
-import protocol.Message;
 
 
 public class ChatServer {
@@ -29,6 +30,7 @@ public class ChatServer {
 	final ChatQueue chatQueue = new ChatQueue();
 	private ServerSocket serverSocket;
 	private ArrayList<ChatClientHandler> clientList = new ArrayList<ChatClientHandler>(0);
+	private ArrayList<GroupChat> groupList = new ArrayList<>(0);
 	// Add new array to handle Registed client
 	
 	public ChatServer(ServerSocket serverSocket) {
@@ -55,4 +57,6 @@ public class ChatServer {
 	public void addClient(ChatClientHandler newClient) {
 		this.clientList.add(newClient);
 	}
+
+	public ArrayList<GroupChat> getGroupList() {return groupList; }
 }

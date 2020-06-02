@@ -15,6 +15,9 @@ package protocol;
 //		RECV:
 //			CMD: MSG, FILE
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
 public class Message {
 	
 	private String msg;
@@ -23,6 +26,7 @@ public class Message {
 	private String sender;
 	private String receiver;
 	private String body = "";
+	private byte[] fileContent = null;
 	
 	public Message() {
 		msg = "";
@@ -40,6 +44,12 @@ public class Message {
 	public void createNew(String msg) {
 		this.msg = msg;
 		init();
+	}
+
+	public void createNew(String msg, byte[] fileContent) {
+		this.msg = msg;
+		init();
+		this.fileContent = fileContent;
 	}
 	
 	public void init() {
@@ -69,6 +79,8 @@ public class Message {
 	public void setReceiveMethod() {
 		this.method = "RECV";
 	}
+
+	public byte[] getFileContent() {return this.fileContent;}
 	
 	public boolean good() {
 		return method != "" && cmd != "" && sender != "" && receiver != ""; 
@@ -92,5 +104,26 @@ public class Message {
 		text += body + "\n";
 		text += "<end>\n";
 		return text;
+	}
+
+	public byte[] toByte() {
+		String text = "";
+		text += "<start>\n";
+		text += method + " " + cmd + "\n";
+		text +=  sender + " " + receiver + "\n";
+		text += "\n";
+		text += body + "\n";
+		byte[] header = text.getBytes();
+		System.out.println(fileContent.length);
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		try {
+			outputStream.write(text.getBytes());
+			outputStream.write(fileContent);
+			outputStream.write("<end>\n".getBytes());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		byte[] res = outputStream.toByteArray();
+		return res;
 	}
 }

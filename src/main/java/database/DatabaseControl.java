@@ -36,11 +36,23 @@ public class DatabaseControl {
 		return false;
 	}
 
+	public User loginValidate(User user) {
+		try (Connection conn = connect()) {
+			return accountManager.loginValidate(user, conn);
+		} catch (SQLException | ClassNotFoundException ex) {
+			System.out.println(ex.getMessage());
+		}
+		return null;
+	}
+
 	public void test() throws SQLException, ClassNotFoundException {
-		System.out.println("ALo");
-		User newUser = new User("tandat", "password", "nguyentandatcs@gmail.com");
-		if ( addNewAccount(newUser)) {
-			System.out.println("ADDed");
+		User newUser = new User("", "123", "dat.nguyen_bk@hcmut.edu.vn");
+		User user = loginValidate(newUser);
+		if (user == null) {
+			System.out.println("Please register!");
+		}
+		else {
+			System.out.println("User " + user.getName() + " has login.");
 		}
 	}
 }

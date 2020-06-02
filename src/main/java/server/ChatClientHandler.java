@@ -1,20 +1,16 @@
 package server;
-//TODO: Split into two thread to handle in and out simutainously
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.*;
+//TODO: Split into two thread to handle in and out simutanously
+
+import database.DatabaseControl;
+import database.User;
+import protocol.Message;
+
+import java.io.*;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
-
-import protocol.Message;
-
-import server.ChatServer;
 
 public class ChatClientHandler extends Thread{
 	class ChatQueue {
@@ -103,7 +99,7 @@ public class ChatClientHandler extends Thread{
 		chatClientOutHandler.start();
 		
 		// TODO: synchronize the chat queue
-		while (true && chatClientInHandler.isAlive() && chatClientOutHandler.isAlive()) {
+		while (chatClientInHandler.isAlive() && chatClientOutHandler.isAlive()) {
 			if (this.chatQueue.hasNext()) {
 				handleMessage(this.chatQueue.next());
 			}
@@ -114,7 +110,7 @@ public class ChatClientHandler extends Thread{
 		// REQUEST: LOGIN
 		if (msg.getMethod().equals("REQUEST")) {
 			if (msg.getCommand().equals("LOGIN")) {
-				handleLogin(msg.getSender(), "123");
+				handleLogin(msg);
 			}
 			if (msg.getCommand().equals("LOGOUT")) {
 				handleLogOut();
@@ -133,30 +129,73 @@ public class ChatClientHandler extends Thread{
 			if (msg.getMethod().equals("SEND")) {
 				if (msg.getCommand().equals("MSG")) {
 					pushMessage(msg);
+					return;
 				}
 			}
-			if (msg.getMethod().equals("RECV")) {
+			if (msg.getMethod().equals("SEND")) {
+				if (msg.getCommand().equals("FILE")) {
+					pushMessage(msg);
+					return;
+				}
+			}
+			if (msg.getMethod().equals("RECV") || msg.getMethod().equals("NOTI")) {
 				if (msg.getCommand().equals("MSG")) {
 					pullMessage(msg);
+					return;
+				}
+				if (msg.getCommand().equals("FILE")) {
+					pullMessage(msg);
+					return;
 				}
 			} else {
-				System.out.println("Not support...");	
+				System.out.println("Not support...");
 				System.out.println(msg.toText());
+				return;
 			}
 		}
 	}
 	
-	public void handleLogin(String name, String password) {
-		this.clientName = name;
-		this.clientPassword = password;
+	public void handleLogin(Message msg) {
+		String content = msg.getBody();
+		BufferedReader reader = new BufferedReader(new StringReader(content));
+		String gmail = null , password = null;
+		try {
+			gmail = reader.readLine();
+			password = reader.readLine();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 		String onlineClients;
-		
+		if (gmail == null || password == null) {
+			String lackInfo = "Please check your connection and login again!";
+			lackInfo = "NOTI FAIL\nserver NOTFOUND\n\n" + lackInfo;
+			try {
+				outputStream.write(("<start>\n" + lackInfo + "\n<end>\n").getBytes());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return;
+		}
+		User loginUser = new User("", password, gmail);
+		DatabaseControl databaseControl = new DatabaseControl();
+		User user = databaseControl.loginValidate(loginUser);
+		if (user == null) {
+			String notRegister = "Please register!";
+			notRegister = "NOTI FAIL\nserver NOTFOUND\n\n" + notRegister;
+			try {
+				outputStream.write(("<start>\n" + notRegister + "\n<end>\n").getBytes());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return;
+		}
+		this.clientName = user.getName();
 		try {
 			ArrayList<ChatClientHandler> onlineList  = this.chatServer.getClientList();
-			String loginSuccessMessage = "RECV 200\nserver " + this.getClientName() + "\n";
+			String loginSuccessMessage = "NOTI 200\nserver " + this.getClientName() + "\n";
 			if (onlineList.size() == 0) {
-				loginSuccessMessage += "Login successfully\nNoone online\n";
+				loginSuccessMessage += "\nLogin successfully\nNoone online\n";
 			}
 			else {
 				onlineClients = "";
@@ -166,7 +205,7 @@ public class ChatClientHandler extends Thread{
 				loginSuccessMessage += "\nOnline: \n" + onlineClients;
 			}
 			outputStream.write(("<start>\n" + loginSuccessMessage + "\n<end>\n").getBytes());
-			System.out.println(name + " login successfully at " + new Date() + "\n");
+			System.out.println(user.getName() + " login successfully at " + new Date() + "\n");
 			this.onlineNotify(this.clientName + " is online.\n");
 			this.chatServer.addClient(this);
 			this.loginStatus = true;
@@ -198,7 +237,7 @@ public class ChatClientHandler extends Thread{
 		} else {
 			for (ChatClientHandler client : this.chatServer.getClientList()) {
 				client.chatQueue.add( new Message (
-						"RECV MSG\n" +
+						"NOTI MSG\n" +
 						"server " + client.getClientName() + "\n\n" +
 						this.clientName +  " is online.")
 				);

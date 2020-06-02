@@ -37,4 +37,29 @@ public class AccountManager {
         }
         return true;
     }
+
+    public User loginValidate(User user, Connection conn) {
+        String userGmail = user.getEmail();
+        String SQL = "SELECT * FROM account WHERE gmail=\'"+user.getEmail()+
+                "\' && password=\'"+user.getPassword()+"\';";
+        long id = 0;
+        Statement st= null;
+        User registedUser = null;
+        try {
+            st = conn.createStatement();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        ResultSet rs=null;
+        try {
+            rs=st.executeQuery(SQL);
+            if (rs.next()){
+                return new User(rs.getString(1), rs.getString(2), rs.getString(3));
+            }
+            rs.close();
+        } catch(Exception e) {
+            System.out.println("No user");
+        }
+        return null;
+    }
 }
