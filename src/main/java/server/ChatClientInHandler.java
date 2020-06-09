@@ -9,6 +9,7 @@ public class ChatClientInHandler implements Runnable {
 	private InputStream inputStream;
 	private ChatClientHandler chatClientHandler;
 	private BufferedReader reader;
+	private byte[] data;
 	ByteArrayOutputStream baos;
 	InputStream msgStream;
 	InputStream fileStream;
@@ -16,7 +17,7 @@ public class ChatClientInHandler implements Runnable {
 	public ChatClientInHandler(InputStream inputStream, ChatClientHandler chatClientHandler) {
 		this.inputStream = inputStream;
 		this.chatClientHandler = chatClientHandler;
-		reader = new BufferedReader(new InputStreamReader(inputStream));
+//		reader = new bufferedreader(new inputstreamreader(inputstream)));
 	}
 
 	@Override
@@ -25,16 +26,44 @@ public class ChatClientInHandler implements Runnable {
 			if (chatClientHandler.hasException()){
 				break;
 			}
-			Message newMsg = getMessage();
-			if (newMsg != null) {
-				this.chatClientHandler.chatQueue.add(newMsg);
-			} else {
-				continue;
+			data = null;
+			try {
+				ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+				int count = 0;
+				int sumRead = 0;
+				byte[] data = new byte[1048576];
+				int tmp = 0;
+				while (inputStream.available() > 0) {
+				    tmp = inputStream.read();
+				    data[count] = (byte)tmp;
+				    count+=1;
+				}
+				if (count == 0) continue;
+				buffer.write(data, 0, count);
+				byte[] res = buffer.toByteArray();
+				Message newMsg = getMessage(res);
+				if (newMsg != null) {
+					this.chatClientHandler.chatQueue.add(newMsg);
+				} else {
+					continue;
+				}
+				data = null;
+				buffer.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
+
 		}
 	}
-	
-	public Message getMessage() {
+
+
+
+	public Message getMessage(byte[] data) {
+	    byte[] cloneData = new byte[data.length];
+		cloneData = data.clone();
+		InputStream is = new ByteArrayInputStream(data);
+		reader = new BufferedReader(new InputStreamReader(is));
 		String line;
 		String msg = "";
 		Message message = new Message();
@@ -57,16 +86,18 @@ public class ChatClientInHandler implements Runnable {
 							msg += line + "\n"; // length of file
 							line = reader.readLine();
 							msg += line + "\n"; // Name of file+
-							fileContentChar = new char[(int) length];
-							System.out.println(line);
-							reader.read(fileContentChar, 0, length);
-							fileContent =  (new String(fileContentChar)).getBytes();
 
-//							System.out.println(fileContentChar);
-							int count = 0;
+							fileContent = new byte[(int) length];
+							int startPos = data.length - length - 8;
+							System.out.println(data.length);
+							for (int i = 0; i < length; i++) {
+								fileContent[i] = cloneData[startPos + i];
+							}
+							System.out.println(fileContent[0]);
 							try (FileOutputStream fout = new FileOutputStream("/home/nguyendat/Desktop/hello.png")) {
 								fout.write(fileContent, 0, fileContent.length);
 							}
+							break;
 						}
 						if (line.equals("")) {
 							isHeaderEnd = true;
