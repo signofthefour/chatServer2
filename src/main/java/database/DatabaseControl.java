@@ -46,13 +46,7 @@ public class DatabaseControl {
 	}
 
 	public void test() throws SQLException, ClassNotFoundException {
-		User newUser = new User("", "123", "dat.nguyen_bk@hcmut.edu.vn");
-		User user = loginValidate(newUser);
-		if (user == null) {
-			System.out.println("Please register!");
-		}
-		else {
-			System.out.println("User " + user.getName() + " has login.");
-		}
+		User newUser = new User("jaAnh", "123", "jaanh@gmail.com");
+		addNewAccount(newUser);
 	}
 }

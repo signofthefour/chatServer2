@@ -36,6 +36,16 @@ public class Message {
 		receiver = "";
 		body = "";
 	}
+
+	public Message(Message message) {
+		cmd = message.getCommand();
+		method = message.getMethod();
+		sender = message.getSender();
+		receiver = message.getReceiver();
+		body = message.getBody();
+		fileContent = message.getFileContent();
+	}
+
 	public Message(String s) {
 		this.msg = s;
 		init();

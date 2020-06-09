@@ -3,10 +3,6 @@ package server;
 import protocol.Message;
 
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
-import java.util.Arrays;
 
 public class ChatClientInHandler implements Runnable {
 	
@@ -61,17 +57,15 @@ public class ChatClientInHandler implements Runnable {
 							msg += line + "\n"; // length of file
 							line = reader.readLine();
 							msg += line + "\n"; // Name of file+
-							fileContentChar = new char[length];
+							fileContentChar = new char[(int) length];
+							System.out.println(line);
 							reader.read(fileContentChar, 0, length);
-							CharBuffer charBuffer = CharBuffer.wrap(fileContentChar);
-							ByteBuffer byteBuffer = Charset.forName("ASCII").encode(charBuffer);
-							fileContent = Arrays.copyOfRange(byteBuffer.array(), byteBuffer.position(), byteBuffer.limit());
-							Arrays.fill(byteBuffer.array(), (byte) 0); // clear sensitive data
-//							System.out.println(fileContent);
-							System.out.println(fileContentChar);
-							try (FileOutputStream fos = new FileOutputStream("/home/nguyendat/Desktop/hello.png")) {
-								fos.write(fileContent);
-								// There is no more need for this line since you had created the instance of "fos" inside the try. And this will automatically close the OutputStream
+							fileContent =  (new String(fileContentChar)).getBytes();
+
+//							System.out.println(fileContentChar);
+							int count = 0;
+							try (FileOutputStream fout = new FileOutputStream("/home/nguyendat/Desktop/hello.png")) {
+								fout.write(fileContent, 0, fileContent.length);
 							}
 						}
 						if (line.equals("")) {
@@ -80,7 +74,10 @@ public class ChatClientInHandler implements Runnable {
 						if (fileContent == null) msg += line + "\n";
 					}
 					if (fileContent != null) message.createNew(msg, fileContent);
-					else message.createNew(msg);
+					else {
+						message.createNew(msg);
+//						System.out.println(msg);
+					}
 				}
 			}
 			if (message.good()) {

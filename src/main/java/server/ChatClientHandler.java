@@ -115,6 +115,9 @@ public class ChatClientHandler extends Thread{
 			if (msg.getCommand().equals("LOGOUT")) {
 				handleLogOut();
 			}
+			if (msg.getCommand().equals("CREATE_GR")) {
+				handleNewGroup(msg);
+			}
 		}
 		// NOT LOGIN YET
 		else if (!isLogin()) {
@@ -128,6 +131,10 @@ public class ChatClientHandler extends Thread{
 		} else {
 			if (msg.getMethod().equals("SEND")) {
 				if (msg.getCommand().equals("MSG")) {
+					pushMessage(msg);
+					return;
+				}
+				if (msg.getCommand().equals("GROUP")) {
 					pushMessage(msg);
 					return;
 				}
@@ -147,6 +154,10 @@ public class ChatClientHandler extends Thread{
 					pullMessage(msg);
 					return;
 				}
+				if (msg.getCommand().equals("GROUP")) {
+					pullMessage(msg);
+					return;
+				}
 			} else {
 				System.out.println("Not support...");
 				System.out.println(msg.toText());
@@ -154,7 +165,27 @@ public class ChatClientHandler extends Thread{
 			}
 		}
 	}
-	
+
+	private void handleNewGroup(Message msg) {
+		InputStream is = new ByteArrayInputStream(msg.getBody().getBytes());
+		BufferedReader bf = new BufferedReader(new InputStreamReader(is));
+		try {
+			String name = bf.readLine();
+			String mem = null;
+			GroupChat newGr = new GroupChat(name);
+			while ((mem = bf.readLine()) != null) {
+				newGr.addMember(mem);
+				addToNewGroupNotify(name, mem);
+				System.out.println(mem);
+			}
+			newGr.addMember(this.clientName);
+			this.chatServer.addGroup(newGr);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
 	public void handleLogin(Message msg) {
 		String content = msg.getBody();
 		BufferedReader reader = new BufferedReader(new StringReader(content));
@@ -237,9 +268,9 @@ public class ChatClientHandler extends Thread{
 		} else {
 			for (ChatClientHandler client : this.chatServer.getClientList()) {
 				client.chatQueue.add( new Message (
-						"NOTI MSG\n" +
+						"NOTI ONL\n" +
 						"server " + client.getClientName() + "\n\n" +
-						this.clientName +  " is online.")
+						this.clientName)
 				);
 			}
 		}
@@ -254,9 +285,31 @@ public class ChatClientHandler extends Thread{
 				for (ChatClientHandler client : this.chatServer.getClientList()) {
 					if (client != this) {
 						client.chatQueue.add( new Message (
-							"RECV MSG\n" +
+							"NOTI OFF\n" +
 							"server " + client.getClientName() + "\n\n" +
-							this.clientName +  " is offline.")
+							this.clientName )
+						);
+					}
+				}
+			}
+			outputStream.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void addToNewGroupNotify(String grName, String memName) {
+		try
+		{
+			if (this.chatServer.getClientList().size() == 0) {
+				return;
+			} else {
+				for (ChatClientHandler client : this.chatServer.getClientList()) {
+					if (client.getClientName().equals(memName)) {
+						client.chatQueue.add( new Message (
+								"RECV MSG\n" +
+										"server " + client.getClientName() + "\n\n" +
+										this.clientName +  " added you to new group " + grName)
 						);
 					}
 				}

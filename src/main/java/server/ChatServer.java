@@ -59,4 +59,8 @@ public class ChatServer {
 	}
 
 	public ArrayList<GroupChat> getGroupList() {return groupList; }
+
+	public void addGroup(GroupChat newGr) {
+		this.groupList.add(newGr);
+	}
 }
