@@ -154,6 +154,18 @@ public class ChatClientHandler extends Thread{
 					pullMessage(msg);
 					return;
 				}
+				if (msg.getCommand().equals("ONL")) {
+					pullMessage(msg);
+					return;
+				}
+				if (msg.getCommand().equals("OFF")) {
+					pullMessage(msg);
+					return;
+				}
+				if (msg.getCommand().equals("NEW_GR")) {
+					pullMessage(msg);
+					return;
+				}
 				if (msg.getCommand().equals("GROUP")) {
 					pullMessage(msg);
 					return;
@@ -307,9 +319,9 @@ public class ChatClientHandler extends Thread{
 				for (ChatClientHandler client : this.chatServer.getClientList()) {
 					if (client.getClientName().equals(memName)) {
 						client.chatQueue.add( new Message (
-								"RECV MSG\n" +
+								"NOTI NEW_GR\n" +
 										"server " + client.getClientName() + "\n\n" +
-										this.clientName +  " added you to new group " + grName)
+										grName)
 						);
 					}
 				}
